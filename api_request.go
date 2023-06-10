@@ -12,8 +12,8 @@ import (
 
 func NewAPIRequest(endpoint, key string) *APIRequest {
 	return &APIRequest{
-		Endipoint: endpoint,
-		Key:       key,
+		Endpoint: endpoint,
+		Key:      key,
 	}
 }
 
@@ -22,7 +22,7 @@ func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 		return nil, fmt.Errorf("payload is nil")
 	}
 
-	req, err := http.NewRequest(http.MethodPost, r.Endipoint, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(http.MethodPost, r.Endpoint, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

@@ -1,8 +1,8 @@
 package robert
 
 type APIRequest struct {
-	Endipoint string
-	Key       string
+	Endpoint string
+	Key      string
 }
 
 type APIResponse struct {
