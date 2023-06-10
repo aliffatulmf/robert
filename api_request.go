@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -21,14 +22,14 @@ func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 		return nil, fmt.Errorf("payload is nil")
 	}
 
-	req, err := http.NewRequest(http.MethodPost, r.Endpoint, bytes.NewBuffer(payload))
+	req, err := r.createRequest(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, err
 	}
-	req.Header.Add("Authorization", r.Key)
 
-	client := &http.Client{}
-	client.Timeout = time.Second * 10
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -44,10 +45,27 @@ func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 		return nil, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
 	}
 
-	res := &APIResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(res); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	parse, err := r.parseResponse(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
+	return parse, nil
+}
+
+func (r *APIRequest) createRequest(payload []byte) (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodPost, r.Endpoint, bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Add("Authorization", r.Key)
+	return req, nil
+}
+
+func (r *APIRequest) parseResponse(body io.Reader) (*APIResponse, error) {
+	res := &APIResponse{}
+	if err := json.NewDecoder(body).Decode(res); err != nil {
+		return nil, err
+	}
 	return res, nil
 }
