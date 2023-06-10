@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -45,13 +44,8 @@ func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 		return nil, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
 	res := &APIResponse{}
-	if err = json.Unmarshal(body, res); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(res); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
