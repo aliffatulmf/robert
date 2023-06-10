@@ -19,7 +19,6 @@ const (
 
 type payload struct {
 	Messages        []map[string]string `json:"messages"`
-	Stream          bool                `json:"stream"`
 	Model           string              `json:"model"`
 	Temperature     float32             `json:"temperature"`
 	PresencePenalty float32             `json:"presence_penalty"`
@@ -27,8 +26,7 @@ type payload struct {
 
 func NewPayload() *payload {
 	return &payload{
-		Stream: true,
-		Model:  "gpt-3.5-turbo-0301",
+		Model: "gpt-3.5-turbo-0301",
 	}
 }
 
@@ -89,10 +87,6 @@ func (p *payload) SetPresencePenalty(penalty float32) error {
 	}
 	p.PresencePenalty = penalty
 	return nil
-}
-
-func (p *payload) SetStream(stream bool) {
-	p.Stream = stream
 }
 
 func (p *payload) Payload() ([]byte, error) {
