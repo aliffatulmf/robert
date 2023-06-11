@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// NewAPIRequest returns a new APIRequest object with the given endpoint and key.
 func NewAPIRequest(endpoint, key string) *APIRequest {
 	return &APIRequest{
 		Endpoint: endpoint,
@@ -18,6 +19,8 @@ func NewAPIRequest(endpoint, key string) *APIRequest {
 	}
 }
 
+// SendAPIRequest sends an API request with the given payload.
+// Returns an APIResponse or an error if the request failed.
 func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 	if payload == nil {
 		return nil, errors.New("payload is nil")
@@ -49,8 +52,13 @@ func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 	return r.parseResponse(resp.Body)
 }
 
+// createRequest creates a new HTTP request with the given payload and endpoint.
 func (r *APIRequest) createRequest(payload []byte) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, r.Endpoint, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(
+		http.MethodPost,
+		r.Endpoint,
+		bytes.NewBuffer(payload),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -58,6 +66,7 @@ func (r *APIRequest) createRequest(payload []byte) (*http.Request, error) {
 	return req, nil
 }
 
+// parseResponse reads the body of an API response and decodes it into an APIResponse struct.
 func (r *APIRequest) parseResponse(body io.Reader) (*APIResponse, error) {
 	res := &APIResponse{}
 	if err := json.NewDecoder(body).Decode(res); err != nil {

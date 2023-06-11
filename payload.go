@@ -6,31 +6,59 @@ import (
 	"fmt"
 )
 
+// Constants for the role of the chat message sender.
 const (
-	Basic = iota
-	Turbo
-)
-
-const (
+	// The system role.
 	System = iota
+	// The user role.
 	User
+	// The assistant role.
 	Assistant
 )
 
-type payload struct {
-	Messages        []map[string]string `json:"messages"`
-	Model           string              `json:"model"`
-	Temperature     float32             `json:"temperature"`
-	PresencePenalty float32             `json:"presence_penalty"`
+// Constants for the type of model to use for generating responses.
+const (
+	// The basic model.
+	Basic = iota
+	// The turbo model.
+	Turbo
+)
+
+// The ChatMessage struct represents a single chat message, including the role of the sender and the message content.
+type ChatMessage struct {
+	// Role field represents the role of the sender
+	Role string `json:"role"`
+
+	// Content field represents the message content
+	Content string `json:"content"`
 }
 
-func NewPayload() *payload {
-	return &payload{
-		Model: "gpt-3.5-turbo-0301",
+// Payload represents a payload for the OpenAI API.
+type Payload struct {
+	// ChatMessages is a list of chat messages.
+	ChatMessages []ChatMessage `json:"messages"`
+
+	// Model is the type of model to use.
+	Model string `json:"model"`
+
+	// Temperature is the sampling temperature to use.
+	Temperature float32 `json:"temperature"`
+
+	// PresencePenalty is the presence penalty to use.
+	PresencePenalty float32 `json:"presence_penalty"`
+}
+
+// NewPayload returns a new Payload with default values.
+func NewPayload() *Payload {
+	return &Payload{
+		Model:           "gpt-3.5-turbo-0301",
+		Temperature:     0.5,
+		PresencePenalty: 0.0,
 	}
 }
 
-func (p *payload) SetMessage(role int, message string) error {
+// AddMessage adds a new chat message to the Payload.
+func (p *Payload) AddMessage(role int, message string) error {
 	var roleName string
 	switch role {
 	case System:
@@ -42,26 +70,31 @@ func (p *payload) SetMessage(role int, message string) error {
 	default:
 		return errors.New("invalid role")
 	}
-	p.Messages = append(p.Messages, map[string]string{
-		"role":    roleName,
-		"content": message,
+
+	p.ChatMessages = append(p.ChatMessages, ChatMessage{
+		Role:    roleName,
+		Content: message,
 	})
+
 	return nil
 }
 
-func (p *payload) SetMessages(role int, messages ...string) error {
+// AddMessages adds multiple chat messages to the Payload.
+func (p *Payload) AddMessages(role int, messages ...string) error {
 	if role < Basic || role > Assistant {
 		return errors.New("invalid role")
 	}
+
 	for _, message := range messages {
-		if err := p.SetMessage(role, message); err != nil {
+		if err := p.AddMessage(role, message); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (p *payload) SetModel(model int) error {
+// SetModel sets the model type for the Payload.
+func (p *Payload) SetModel(model int) error {
 	switch model {
 	case Basic:
 		p.Model = "gpt-3.5-turbo-0301"
@@ -73,7 +106,8 @@ func (p *payload) SetModel(model int) error {
 	return nil
 }
 
-func (p *payload) SetTemperature(temp float32) error {
+// SetTemperature sets the temperature for the Payload.
+func (p *Payload) SetTemperature(temp float32) error {
 	if temp < -1.0 || temp > 1.0 {
 		return errors.New("invalid temperature. Must be between -1.0 and 1.0")
 	}
@@ -81,7 +115,8 @@ func (p *payload) SetTemperature(temp float32) error {
 	return nil
 }
 
-func (p *payload) SetPresencePenalty(penalty float32) error {
+// SetPresencePenalty sets the presence penalty for the Payload.
+func (p *Payload) SetPresencePenalty(penalty float32) error {
 	if penalty < -1.0 || penalty > 1.0 {
 		return errors.New("invalid presence penalty. Must be between -1.0 and 1.0")
 	}
@@ -89,7 +124,8 @@ func (p *payload) SetPresencePenalty(penalty float32) error {
 	return nil
 }
 
-func (p *payload) Payload() ([]byte, error) {
+// ToJSON serializes the Payload to JSON.
+func (p *Payload) ToJSON() ([]byte, error) {
 	b, err := json.Marshal(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create payload: %w", errors.Unwrap(err))
