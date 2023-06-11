@@ -3,6 +3,7 @@ package robert
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -19,7 +20,7 @@ func NewAPIRequest(endpoint, key string) *APIRequest {
 
 func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 	if payload == nil {
-		return nil, fmt.Errorf("payload is nil")
+		return nil, errors.New("payload is nil")
 	}
 
 	req, err := r.createRequest(payload)
@@ -45,12 +46,7 @@ func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 		return nil, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
 	}
 
-	parse, err := r.parseResponse(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return parse, nil
+	return r.parseResponse(resp.Body)
 }
 
 func (r *APIRequest) createRequest(payload []byte) (*http.Request, error) {
@@ -65,7 +61,7 @@ func (r *APIRequest) createRequest(payload []byte) (*http.Request, error) {
 func (r *APIRequest) parseResponse(body io.Reader) (*APIResponse, error) {
 	res := &APIResponse{}
 	if err := json.NewDecoder(body).Decode(res); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 	return res, nil
 }
