@@ -8,10 +8,23 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
-// NewAPIRequest returns a new APIRequest object with the given endpoint and key.
+// NewAPIRequest creates a new APIRequest instance with the provided endpoint and key.
+// The endpoint is the URL endpoint for the API request.
+// The key is a token used for authentication or identification purposes.
+// It is recommended to generate the key using the Token function to ensure it is properly formatted.
+// Example usage:
+//
+//	endpoint := "https://api.robert.com"
+//	token := "myToken123"
+//	key, err := Token(token)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	apiRequest := NewAPIRequest(endpoint, key)
 func NewAPIRequest(endpoint, key string) *APIRequest {
 	return &APIRequest{
 		Endpoint: endpoint,
@@ -73,4 +86,51 @@ func (r *APIRequest) parseResponse(body io.Reader) (*APIResponse, error) {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 	return res, nil
+}
+
+// containBearer checks if the given token string contains the "Bearer " prefix.
+// It returns true if the prefix is found, and false otherwise.
+// The function is case-insensitive, so it will match both "Bearer " and "bearer ".
+func containBearer(token string) bool {
+	return strings.ToLower(token[:7]) == "bearer "
+}
+
+// containSpace returns the index of the first space character in the input token string, and a boolean indicating whether a space was found.
+// If a space is found, the boolean is true, otherwise it is false.
+// The index is zero-based, meaning that the first character has index 0, the second has index 1, and so on.
+// If no space is found, the index is -1.
+func containSpace(token string) (int, bool) {
+	space := strings.IndexRune(token, ' ')
+	return space, space != -1
+}
+
+// Token returns a modified version of the input token string, by concatenating its prefix and suffix parts.
+// The input token must have a length of at least 7 characters, otherwise an error is returned.
+// The prefix and suffix parts are extracted from the input token using the getTokenParts function.
+// If an error occurs during the extraction, it is propagated to the caller.
+// The returned string is the concatenation of the prefix and suffix parts, in that order.
+func Token(token string) (string, error) {
+	if len(token) < 7 {
+		return "", fmt.Errorf("token length %d, expected at least 7", len(token))
+	}
+	prefix, suffix, err := getTokenParts(token)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s%s", prefix, suffix), nil
+}
+
+// getTokenParts extracts the token type and value from a given token string.
+// If the token contains the string "Bearer ", it is assumed to be in the format "Bearer <token value>".
+// Otherwise, the token is assumed to be in the format "<token type> <token value>".
+// The function returns the token type ("Bearer "), the token value, and an error if any.
+func getTokenParts(token string) (string, string, error) {
+	if containBearer(token) {
+		return "Bearer ", token[7:], nil
+	}
+	index, hasSpace := containSpace(token)
+	if hasSpace {
+		return "Bearer ", token, nil
+	}
+	return "Bearer ", token[index+1:], nil
 }
