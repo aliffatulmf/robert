@@ -2,114 +2,92 @@ package robert
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 )
 
-// Constants for the role of the chat message sender.
+// Role represents the role of the chat message sender.
+type Role int
+
 const (
-	// The system role.
-	System = iota
-	// The user role.
+	System Role = iota
 	User
-	// The assistant role.
 	Assistant
 )
 
-// Constants for the type of model to use for generating responses.
+// ModelType represents the type of model to use for generating responses.
+type ModelType int
+
 const (
-	// The basic model.
-	Basic = iota
-	// The turbo model.
+	Basic ModelType = iota
 	Turbo
+	Basic16K
+	Turbo16K
 )
 
-// The ChatMessage struct represents a single chat message, including the role of the sender and the message content.
+// ChatMessage represents a single chat message, including the role of the sender and the message content.
 type ChatMessage struct {
-	// Role field represents the role of the sender
-	Role string `json:"role"`
-
-	// Content field represents the message content
+	Role    Role   `json:"role"`
 	Content string `json:"content"`
 }
 
 // Payload represents a payload for the OpenAI API.
 type Payload struct {
-	// ChatMessages is a list of chat messages.
-	ChatMessages []ChatMessage `json:"messages"`
-
-	// Model is the type of model to use.
-	Model string `json:"model"`
-
-	// Temperature is the sampling temperature to use.
-	Temperature float32 `json:"temperature"`
-
-	// PresencePenalty is the presence penalty to use.
-	PresencePenalty float32 `json:"presence_penalty"`
+	ChatMessages    []ChatMessage `json:"messages"`         // A list of chat messages.
+	Model           string        `json:"model"`            // The type of model to use.
+	Temperature     float32       `json:"temperature"`      // The sampling temperature to use.
+	PresencePenalty float32       `json:"presence_penalty"` // The presence penalty to use.
 }
 
 // NewPayload returns a new Payload with default values.
-func NewPayload() *Payload {
-	return &Payload{
-		Model:           "gpt-3.5-turbo-0301",
-		Temperature:     0.5,
-		PresencePenalty: 0.0,
+func NewPayload(modelType ModelType, temp float32, presencePenalty float32) Payload {
+	p := Payload{}
+	p.Model = getModelType(modelType)
+	p.Temperature = temp
+	p.PresencePenalty = presencePenalty
+	return p
+}
+
+// getModelType returns the appropriate model type as per given ModelType.
+func getModelType(modelType ModelType) string {
+	switch modelType {
+	case Turbo:
+		return "gpt-3.5-turbo"
+	case Turbo16K:
+		return "gpt-3.5-turbo-16k"
+	case Basic16K:
+		return "gpt-3.5-turbo-16k-0613"
+	case Basic:
+		fallthrough
+	default:
+		return "gpt-3.5-turbo-0613"
 	}
 }
 
 // AddMessage adds a new chat message to the Payload.
-func (p *Payload) AddMessage(role int, message string) error {
-	var roleName string
-	switch role {
-	case System:
-		roleName = "system"
-	case User:
-		roleName = "user"
-	case Assistant:
-		roleName = "assistant"
-	default:
-		return errors.New("invalid role")
-	}
-
+func (p *Payload) AddMessage(role Role, message string) {
 	p.ChatMessages = append(p.ChatMessages, ChatMessage{
-		Role:    roleName,
+		Role:    role,
 		Content: message,
 	})
-
-	return nil
 }
 
 // AddMessages adds multiple chat messages to the Payload.
-func (p *Payload) AddMessages(role int, messages ...string) error {
-	if role < Basic || role > Assistant {
-		return errors.New("invalid role")
-	}
-
+func (p *Payload) AddMessages(role Role, messages ...string) {
 	for _, message := range messages {
-		if err := p.AddMessage(role, message); err != nil {
-			return err
-		}
+		p.AddMessage(role, message)
 	}
-	return nil
 }
 
 // SetModel sets the model type for the Payload.
-func (p *Payload) SetModel(model int) error {
-	switch model {
-	case Basic:
-		p.Model = "gpt-3.5-turbo-0301"
-	case Turbo:
-		p.Model = "gpt-3.5-turbo"
-	default:
-		return errors.New("invalid model")
-	}
+func (p *Payload) SetModel(modelType ModelType) error {
+	p.Model = getModelType(modelType)
 	return nil
 }
 
 // SetTemperature sets the temperature for the Payload.
 func (p *Payload) SetTemperature(temp float32) error {
 	if temp < -1.0 || temp > 1.0 {
-		return errors.New("invalid temperature. Must be between -1.0 and 1.0")
+		return fmt.Errorf("invalid temperature. Must be between -1.0 and 1.0")
 	}
 	p.Temperature = temp
 	return nil
@@ -118,7 +96,7 @@ func (p *Payload) SetTemperature(temp float32) error {
 // SetPresencePenalty sets the presence penalty for the Payload.
 func (p *Payload) SetPresencePenalty(penalty float32) error {
 	if penalty < -1.0 || penalty > 1.0 {
-		return errors.New("invalid presence penalty. Must be between -1.0 and 1.0")
+		return fmt.Errorf("invalid presence penalty. Must be between -1.0 and 1.0")
 	}
 	p.PresencePenalty = penalty
 	return nil
@@ -126,9 +104,5 @@ func (p *Payload) SetPresencePenalty(penalty float32) error {
 
 // ToJSON serializes the Payload to JSON.
 func (p *Payload) ToJSON() ([]byte, error) {
-	b, err := json.Marshal(p)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create payload: %w", errors.Unwrap(err))
-	}
-	return b, nil
+	return json.Marshal(p)
 }

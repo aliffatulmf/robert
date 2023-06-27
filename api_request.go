@@ -16,6 +16,7 @@ import (
 // The endpoint is the URL endpoint for the API request.
 // The key is a token used for authentication or identification purposes.
 // It is recommended to generate the key using the Token function to ensure it is properly formatted.
+//
 // Example usage:
 //
 //	endpoint := "https://api.robert.com"
@@ -33,7 +34,7 @@ func NewAPIRequest(endpoint, key string) *APIRequest {
 }
 
 // SendAPIRequest sends an API request with the given payload.
-// Returns an APIResponse or an error if the request failed.
+// It returns an APIResponse or an error if the request failed.
 func (r *APIRequest) SendAPIRequest(payload []byte) (*APIResponse, error) {
 	if payload == nil {
 		return nil, errors.New("payload is nil")
@@ -95,8 +96,9 @@ func containBearer(token string) bool {
 	return strings.ToLower(token[:7]) == "bearer "
 }
 
-// containSpace returns the index of the first space character in the input token string, and a boolean indicating whether a space was found.
-// If a space is found, the boolean is true, otherwise it is false.
+// containSpace returns the index of the first space character in the input token string,
+// and a boolean indicating whether a space was found.
+// If a space is found, the boolean is true; otherwise, it is false.
 // The index is zero-based, meaning that the first character has index 0, the second has index 1, and so on.
 // If no space is found, the index is -1.
 func containSpace(token string) (int, bool) {
@@ -104,8 +106,8 @@ func containSpace(token string) (int, bool) {
 	return space, space != -1
 }
 
-// Token returns a modified version of the input token string, by concatenating its prefix and suffix parts.
-// The input token must have a length of at least 7 characters, otherwise an error is returned.
+// Token returns a modified version of the input token string by concatenating its prefix and suffix parts.
+// The input token must have a length of at least 7 characters; otherwise, an error is returned.
 // The prefix and suffix parts are extracted from the input token using the getTokenParts function.
 // If an error occurs during the extraction, it is propagated to the caller.
 // The returned string is the concatenation of the prefix and suffix parts, in that order.
